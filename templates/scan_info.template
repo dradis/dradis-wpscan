@@ -18,7 +18,7 @@ WPScan Scan Information
 %scan_info.themes_string%
 
 
-#[Themes]#
+#[Users]#
 %scan_info.users%
 
 

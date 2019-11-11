@@ -84,27 +84,35 @@ module Dradis::Plugins::Wpscan
       vulnerabilities = []
 
       if data['config_backups']
-        vulnerability = {}
-        vulnerability['title'] = 'WordPress Configuration Backup Found'
-        vulnerability['url']   = data['config_backups'].keys[0]
+        data['config_backups'].each do |url, value|
+          vulnerability = {}
+          vulnerability['title'] = 'WordPress Configuration Backup Found'
+          vulnerability['url']   = url
 
-        vulnerabilities << vulnerability
+          vulnerabilities << vulnerability
+        end
       end
 
       if data['db_exports']
-        vulnerability = {}
-        vulnerability['title'] = 'Database Backup File Found'
-        vulnerability['url']   = data['db_exports'].keys[0]
+        data['db_exports'].each do |url, value|
+          vulnerability = {}
+          vulnerability['title'] = 'Database Backup File Found'
+          vulnerability['url']   = url
 
-        vulnerabilities << vulnerability
+          vulnerabilities << vulnerability
+        end
       end
 
       if data['timthumbs']
-        vulnerability = {}
-        vulnerability['title'] = "Timthumb RCE File Found"
-        vulnerability['url']   = data['timthumbs'].keys[0]
+        data['timthumbs'].each do |url, value|
+          unless value['vulnerabilities'].empty?
+            vulnerability = {}
+            vulnerability['title'] = "Timthumb RCE File Found"
+            vulnerability['url']   = url
 
-        vulnerabilities << vulnerability
+            vulnerabilities << vulnerability
+          end
+        end
       end
 
       if data['password_attack']

@@ -4,5 +4,5 @@ scan_info.start_time
 scan_info.elapsed
 scan_info.wordpress_version
 scan_info.plugins_string
-scan.info.themes_string
-scan.info.users
+scan_info.themes_string
+scan_info.users
