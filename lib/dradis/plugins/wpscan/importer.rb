@@ -15,7 +15,7 @@ module Dradis::Plugins::Wpscan
       # Do a sanity check to confirm the user uploaded the right file
       # format.
       if data['target_url'].nil?
-        logger.error "ERROR: no 'banner->description' field present in the provided "\
+        logger.error "ERROR: No 'target_url' field present in the provided "\
                      "JSON data. Are you sure you uploaded a WPScan JSON output file?"
         exit(-1)
       end
