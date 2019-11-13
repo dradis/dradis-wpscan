@@ -19,7 +19,27 @@ module Dradis::Plugins::Wpscan
                      "JSON data. Are you sure you uploaded a WPScan JSON output file?"
         exit(-1)
       end
+      
+      # Initial data normalisation
+      data = parse_json( data )
 
+      # Create a node based on the target_url
+      node = create_node( data )
+
+      # Parse vulnerability data and make more human readable.
+      # NOTE: You need an API token for the WPVulnDB vulnerability data.
+      parse_known_vulnerabilities( data, node )
+
+
+      # Add bespoke/config vulnerabilities to Dradis
+      #
+      # TODO: Can we add severity to issues?
+      #
+      # Note: No API key needed.
+      parse_config_vulnerabilities( data, node )
+    end
+
+    def parse_json( data )
       # Parse scan info data and make more human readable.
       data['wpscan_version']    = data.dig('banner', 'version')
       data['start_time']        = DateTime.strptime(data['start_time'].to_s,'%s')
@@ -29,17 +49,33 @@ module Dradis::Plugins::Wpscan
       data['themes_string']     = data['themes'].keys.join("\n")  if data['themes']
       data['users']             = data['users'].keys.join("\n")   if data['users']
 
-      scan_info = template_service.process_template(template: 'scan_info', data: data)
-      content_service.create_note text: scan_info
+      data
+    end
 
-      # Parse vulnerability data and make more human readable.
-      # NOTE: You need an API token for the WPVulnDB vulnerability data.
+    def create_node( data )
+      node = content_service.create_node(label: data['target_url'], type: :host)
+
+      # Define Node properties
+      if node.respond_to?(:properties)
+        node.set_property(:start_url, data['target_url'])
+        #node.set_property(:start_time, data['start_time'])
+        node.set_property(:scan_time, data['elapsed'])
+      end
+
+      scan_info = template_service.process_template(template: 'scan_info', data: data)
+      content_service.create_note text: scan_info, node: node
+
+      node
+    end
+
+
+    def parse_known_vulnerabilities( data, node )
       vulnerabilities = []
 
       # WordPress Vulnerabilities
       if data['version'] && data['version']['status'] == 'insecure'
         data['version']['vulnerabilities'].each do |vulnerability_data|
-          vulnerabilities << add_vulnerability( vulnerability_data )
+          vulnerabilities << parse_vulnerability( vulnerability_data )
         end
       end
 
@@ -48,7 +84,7 @@ module Dradis::Plugins::Wpscan
         data['plugins'].each do |key, plugin|
           if plugin['vulnerabilities']
             plugin['vulnerabilities'].each do |vulnerability_data|
-              vulnerabilities << add_vulnerability( vulnerability_data )
+              vulnerabilities << parse_vulnerability( vulnerability_data )
             end
           end
         end
@@ -59,7 +95,7 @@ module Dradis::Plugins::Wpscan
         data['themes'].each do |key, theme|
           if theme['vulnerabilities']
             theme['vulnerabilities'].each do |vulnerability_data|
-              vulnerabilities << add_vulnerability( vulnerability_data )
+              vulnerabilities << parse_vulnerability( vulnerability_data )
             end
           end
         end
@@ -70,24 +106,23 @@ module Dradis::Plugins::Wpscan
         logger.info { "Adding vulnerability: #{vulnerability['title']}" }
 
         vulnerability_template = template_service.process_template(template: 'vulnerability', data: vulnerability)
-        content_service.create_issue(text: vulnerability_template, id: vulnerability['wpvulndb_id'])
-      end
+        issue = content_service.create_issue(text: vulnerability_template, id: vulnerability['wpvulndb_id'])
 
-      # Add bespoke/config vulnerabilities to Dradis
-      #
-      # TODO: Would be better to add the URL & passwords as evidence.
-      # But not sure what to use as a "node" value?
-      #
-      # TODO: Can we add severity to issues?
-      #
-      # Note: No API key needed.
+        if vulnerability['evidence']
+          evidence_content = template_service.process_template(template: 'evidence', data: vulnerability)
+          content_service.create_evidence(issue: issue, node: node, content: vulnerability['evidence'])
+        end
+      end  
+    end
+
+    def parse_config_vulnerabilities( data, node )
       vulnerabilities = []
 
       if data['config_backups']
         data['config_backups'].each do |url, value|
           vulnerability = {}
-          vulnerability['title'] = 'WordPress Configuration Backup Found'
-          vulnerability['url']   = url
+          vulnerability['title']    = 'WordPress Configuration Backup Found'
+          vulnerability['evidence'] = url
 
           vulnerabilities << vulnerability
         end
@@ -96,8 +131,8 @@ module Dradis::Plugins::Wpscan
       if data['db_exports']
         data['db_exports'].each do |url, value|
           vulnerability = {}
-          vulnerability['title'] = 'Database Backup File Found'
-          vulnerability['url']   = url
+          vulnerability['title']    = 'Database Backup File Found'
+          vulnerability['evidence'] = url
 
           vulnerabilities << vulnerability
         end
@@ -107,8 +142,8 @@ module Dradis::Plugins::Wpscan
         data['timthumbs'].each do |url, value|
           unless value['vulnerabilities'].empty?
             vulnerability = {}
-            vulnerability['title'] = "Timthumb RCE File Found"
-            vulnerability['url']   = url
+            vulnerability['title']    = "Timthumb RCE File Found"
+            vulnerability['evidence'] = url
 
             vulnerabilities << vulnerability
           end
@@ -118,7 +153,8 @@ module Dradis::Plugins::Wpscan
       if data['password_attack']
         data['password_attack'].each do |user|
           vulnerability = {}
-          vulnerability['title'] = "WordPress #{user[0]}:#{user[1]['password']} User/Password Found"
+          vulnerability['title'] = "WordPres Weak User Password Found"
+          vulnerability['evidence'] = "#{user[0]}:#{user[1]['password']}"
 
           vulnerabilities << vulnerability
         end
@@ -130,11 +166,15 @@ module Dradis::Plugins::Wpscan
 
         vulnerability_template = template_service.process_template(template: 'vulnerability', data: vulnerability)
         issue = content_service.create_issue(text: vulnerability_template, id: "wpscan_#{rand(999999)}")
-      end
 
+        if vulnerability['evidence']
+          evidence_content = template_service.process_template(template: 'evidence', data: vulnerability)
+          content_service.create_evidence(issue: issue, node: node, content: vulnerability['evidence'])
+        end
+      end
     end
 
-    def add_vulnerability( vulnerability_data )
+    def parse_vulnerability( vulnerability_data )
       wpvulndb_url = 'https://wpvulndb.com/vulnerabilities/'
 
       vulnerability = {}
