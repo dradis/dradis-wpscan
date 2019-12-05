@@ -106,7 +106,7 @@ module Dradis::Plugins::Wpscan
         logger.info { "Adding vulnerability: #{vulnerability['title']}" }
 
         vulnerability_template = template_service.process_template(template: 'vulnerability', data: vulnerability)
-        issue = content_service.create_issue(text: vulnerability_template, id: vulnerability['wpvulndb_id'])
+        issue = content_service.create_issue(text: vulnerability_template, id: vulnerability['wpvulndb_id'], node: node)
 
         if vulnerability['evidence']
           evidence_content = template_service.process_template(template: 'evidence', data: vulnerability)
