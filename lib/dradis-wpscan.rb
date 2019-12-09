@@ -3,3 +3,5 @@ require 'dradis-plugins'
 
 # Load this add-on's engine
 require 'dradis/plugins/wpscan'
+
+require 'multi_json'
