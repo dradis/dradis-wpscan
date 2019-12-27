@@ -15,11 +15,13 @@ module Dradis::Plugins::Wpscan
       # Do a sanity check to confirm the user uploaded the right file
       # format.
       if data['target_url'].nil?
-        logger.error "ERROR: No 'target_url' field present in the provided "\
-                     "JSON data. Are you sure you uploaded a WPScan JSON output file?"
-        exit(-1)
+        error = "ERROR: No 'target_url' field present in the provided " \
+                "JSON data. Are you sure you uploaded a WPScan JSON output file?"
+        logger.fatal { error }
+        content_service.create_note text: error
+        return false
       end
-      
+
       # Initial data normalisation
       data = parse_json( data )
 
@@ -112,7 +114,7 @@ module Dradis::Plugins::Wpscan
           evidence_content = template_service.process_template(template: 'evidence', data: vulnerability)
           content_service.create_evidence(issue: issue, node: node, content: vulnerability['evidence'])
         end
-      end  
+      end
     end
 
     def parse_config_vulnerabilities( data, node )

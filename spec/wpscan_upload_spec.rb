@@ -15,13 +15,17 @@ describe 'wpscan upload plugin' do
       @content_service = Dradis::Plugins::ContentService::Base.new(plugin: plugin)
 
       @importer = plugin::Importer.new(
-        content_service: @content_service,
+        content_service: @content_service
       )
     end
 
-    it "raises an error note when the json is not valid" do
-      # Run the import
-      p @importer.import(file: 'spec/fixtures/files/invalid.json')
+    it 'raises an error note when the json is not valid' do
+      expect(@content_service).to receive(:create_note) do |args|
+        expect(args[:text]).to include("ERROR: No 'target_url' field present in the provided JSON data")
+        OpenStruct.new(args)
+      end.once
+
+      @importer.import(file: 'spec/fixtures/files/invalid.json')
     end
 
     # it "creates nodes, issues, notes and an evidences as needed" do
@@ -54,7 +58,7 @@ describe 'wpscan upload plugin' do
     #     expect(args[:node].label).to eq("74.207.244.221")
     #     OpenStruct.new(args)
     #   end.once
-
+    #
     #   # Run the import
     #   @importer.import(file: 'spec/fixtures/files/sample.json')
     # end
