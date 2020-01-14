@@ -8,7 +8,7 @@ Gem::Specification.new do |spec|
   spec.name        = 'dradis-wpscan'
   spec.version     = version
   spec.summary     = 'WPScan add-on for the Dradis Framework.'
-  spec.description = 'This add-on allows you to upload and parse output produced from the WPScan security scanner into Dradis.'
+  spec.description = 'This add-on allows you to upload and parse output produced from the WPScan WordPress security scanner into Dradis.'
 
   spec.license     = 'GPL-2'
 
@@ -25,8 +25,9 @@ Gem::Specification.new do |spec|
   # until we bump Dradis Pro to 4.1.
   # s.add_dependency 'rails', '~> 4.1.1'
   spec.add_dependency 'dradis-plugins', '~> 3.6'
+  spec.add_dependency 'multi_json'
 
-  spec.add_development_dependency 'bundler', '~> 1.6'
+  spec.add_development_dependency 'bundler'
   spec.add_development_dependency 'rake', '~> 10.0'
   spec.add_development_dependency 'rspec-rails'
   spec.add_development_dependency 'combustion', '~> 0.5.2'
