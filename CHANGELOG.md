@@ -1,4 +1,4 @@
-## Dradis Framework 3.18 (XXX, 2020) ##
+## Dradis Framework 3.18 (July, 2020) ##
 
 *  Fix WPScan Plugin Manager by adding an evidence.sample
 
