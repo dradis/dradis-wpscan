@@ -79,7 +79,7 @@ module Dradis::Plugins::Wpscan
       vulnerabilities = []
 
       # WordPress Vulnerabilities
-      if data['version'] && data['version']['status'] == 'insecure'
+      if data['version'] && data['version']['status'] == 'insecure' || 'outdated'
         data['version']['vulnerabilities'].each do |vulnerability_data|
           vulnerabilities << parse_vulnerability( vulnerability_data )
         end
