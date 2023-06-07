@@ -1,6 +1,9 @@
 v4.#.# (#### 2023)
   - Import "version" findings with status: outdated
 
+v4.9.0 (June 2023)
+  - No changes
+
 v4.8.0 (April 2023)
   - No changes
 
