@@ -7,9 +7,8 @@ module Dradis::Plugins::Wpscan
     # The framework will call this function if the user selects this plugin from
     # the dropdown list and uploads a file.
     # @returns true if the operation was successful, false otherwise
-    def import(params={})
-
-      file_content = File.read( params[:file] )
+    def import(params = {})
+      file_content = File.read(params[:file])
 
       # Parse the uploaded file into a Ruby Hash
       logger.info { "Parsing WPScan output from #{ params[:file] }..." }
@@ -20,35 +19,34 @@ module Dradis::Plugins::Wpscan
       # format.
       if data['target_url'].nil?
         error = "ERROR: No 'target_url' field present in the provided " \
-                "JSON data. Are you sure you uploaded a WPScan JSON output file?"
+                'JSON data. Are you sure you uploaded a WPScan JSON output file?'
         logger.fatal { error }
         content_service.create_note text: error
         return false
       end
 
       # Initial data normalisation
-      data = parse_json( data )
+      data = parse_json(data)
 
       # Create a node based on the target_url
-      node = create_node( data )
+      node = create_node(data)
 
       # Parse vulnerability data and make more human readable.
       # NOTE: You need an API token for the WPVulnDB vulnerability data.
-      parse_known_vulnerabilities( data, node )
-
+      parse_known_vulnerabilities(data, node)
 
       # Add bespoke/config vulnerabilities to Dradis
       #
       # TODO: Can we add severity to issues?
       #
       # Note: No API key needed.
-      parse_config_vulnerabilities( data, node )
+      parse_config_vulnerabilities(data, node)
     end
 
-    def parse_json( data )
+    def parse_json(data)
       # Parse scan info data and make more human readable.
       data['wpscan_version']    = data.dig('banner', 'version')
-      data['start_time']        = DateTime.strptime(data['start_time'].to_s,'%s')
+      data['start_time']        = DateTime.strptime(data['start_time'].to_s, '%s')
       data['elapsed']           = "#{data["elapsed"]} seconds"
       data['wordpress_version'] = data.dig('version', 'number')   if data['version']
       data['plugins_string']    = data['plugins'].keys.join("\n") if data['plugins']
@@ -58,7 +56,7 @@ module Dradis::Plugins::Wpscan
       data
     end
 
-    def create_node( data )
+    def create_node(data)
       node = content_service.create_node(label: data['target_url'], type: :host)
 
       # Define Node properties
@@ -74,14 +72,13 @@ module Dradis::Plugins::Wpscan
       node
     end
 
-
-    def parse_known_vulnerabilities( data, node )
+    def parse_known_vulnerabilities(data, node)
       vulnerabilities = []
 
       # WordPress Vulnerabilities
-      if data['version'] && data['version']['status'] == 'insecure'
+      if data['version'] && ['insecure', 'outdated'].include?(data['version']['status'])
         data['version']['vulnerabilities'].each do |vulnerability_data|
-          vulnerabilities << parse_vulnerability( vulnerability_data )
+          vulnerabilities << parse_vulnerability(vulnerability_data)
         end
       end
 
@@ -90,7 +87,7 @@ module Dradis::Plugins::Wpscan
         data['plugins'].each do |key, plugin|
           if plugin['vulnerabilities']
             plugin['vulnerabilities'].each do |vulnerability_data|
-              vulnerabilities << parse_vulnerability( vulnerability_data )
+              vulnerabilities << parse_vulnerability(vulnerability_data)
             end
           end
         end
@@ -101,7 +98,7 @@ module Dradis::Plugins::Wpscan
         data['themes'].each do |key, theme|
           if theme['vulnerabilities']
             theme['vulnerabilities'].each do |vulnerability_data|
-              vulnerabilities << parse_vulnerability( vulnerability_data )
+              vulnerabilities << parse_vulnerability(vulnerability_data)
             end
           end
         end
@@ -121,7 +118,7 @@ module Dradis::Plugins::Wpscan
       end
     end
 
-    def parse_config_vulnerabilities( data, node )
+    def parse_config_vulnerabilities(data, node)
       vulnerabilities = []
 
       if data['config_backups']
@@ -148,7 +145,7 @@ module Dradis::Plugins::Wpscan
         data['timthumbs'].each do |url, value|
           unless value['vulnerabilities'].empty?
             vulnerability = {}
-            vulnerability['title']    = "Timthumb RCE File Found"
+            vulnerability['title']    = 'Timthumb RCE File Found'
             vulnerability['evidence'] = url
 
             vulnerabilities << vulnerability
@@ -159,7 +156,7 @@ module Dradis::Plugins::Wpscan
       if data['password_attack']
         data['password_attack'].each do |user|
           vulnerability = {}
-          vulnerability['title'] = "WordPres Weak User Password Found"
+          vulnerability['title'] = 'WordPres Weak User Password Found'
           vulnerability['evidence'] = "#{user[0]}:#{user[1]['password']}"
 
           vulnerabilities << vulnerability
@@ -180,7 +177,7 @@ module Dradis::Plugins::Wpscan
       end
     end
 
-    def parse_vulnerability( vulnerability_data )
+    def parse_vulnerability(vulnerability_data)
       wpvulndb_url = 'https://wpvulndb.com/vulnerabilities/'
 
       vulnerability = {}
