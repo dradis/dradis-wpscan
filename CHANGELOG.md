@@ -1,5 +1,6 @@
-v4.10.0 (#### 2023)
+v4.10.0 (September 2023)
   - Import "version" findings with status: outdated
+  - Update gemspec links
 
 v4.9.0 (June 2023)
   - No changes
