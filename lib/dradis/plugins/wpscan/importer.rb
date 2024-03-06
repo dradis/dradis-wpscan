@@ -66,7 +66,7 @@ module Dradis::Plugins::Wpscan
         node.set_property(:scan_time, data['elapsed'])
       end
 
-      scan_info = template_service.process_template(template: 'scan_info', data: data)
+      scan_info = mapping_service.apply_mapping(source: 'scan_info', data: data)
       content_service.create_note text: scan_info, node: node
 
       node
@@ -108,11 +108,11 @@ module Dradis::Plugins::Wpscan
       vulnerabilities.each do |vulnerability|
         logger.info { "Adding vulnerability: #{vulnerability['title']}" }
 
-        vulnerability_template = template_service.process_template(template: 'vulnerability', data: vulnerability)
+        vulnerability_template = mapping_service.apply_mapping(source: 'vulnerability', data: vulnerability)
         issue = content_service.create_issue(text: vulnerability_template, id: vulnerability['wpvulndb_id'], node: node)
 
         if vulnerability['evidence']
-          evidence_content = template_service.process_template(template: 'evidence', data: vulnerability)
+          evidence_content = mapping_service.apply_mapping(source: 'evidence', data: vulnerability)
           content_service.create_evidence(issue: issue, node: node, content: vulnerability['evidence'])
         end
       end
@@ -167,11 +167,11 @@ module Dradis::Plugins::Wpscan
       vulnerabilities.each do |vulnerability|
         logger.info { "Adding vulnerability: #{vulnerability['title']}" }
 
-        vulnerability_template = template_service.process_template(template: 'vulnerability', data: vulnerability)
+        vulnerability_template = mapping_service.apply_mapping(source: 'vulnerability', data: vulnerability)
         issue = content_service.create_issue(text: vulnerability_template, id: "wpscan_#{rand(999999)}")
 
         if vulnerability['evidence']
-          evidence_content = template_service.process_template(template: 'evidence', data: vulnerability)
+          evidence_content = mapping_service.apply_mapping(source: 'evidence', data: vulnerability)
           content_service.create_evidence(issue: issue, node: node, content: vulnerability['evidence'])
         end
       end
