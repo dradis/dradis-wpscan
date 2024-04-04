@@ -23,5 +23,29 @@ module Dradis::Plugins::Wpscan
         'WPVulnDB' => '{{ wpscan[vulnerability.wpvulndb_url] }}'
       }
     }.freeze
+
+    SOURCE_FIELDS = {
+      evidence: [
+        'evidence.evidence'
+      ],
+      scan_info: [
+        'scan_info.target_url',
+        'scan_info.wpscan_version',
+        'scan_info.start_time',
+        'scan_info.elapsed',
+        'scan_info.wordpress_version',
+        'scan_info.plugins_string',
+        'scan_info.themes_string',
+        'scan_info.users'
+      ],
+      vulnerability: [
+        'vulnerability.title',
+        'vulnerability.fixed_in',
+        'vulnerability.cve',
+        'vulnerability.url',
+        'vulnerability.wpvulndb_url',
+        'vulnerability.wpvulndb_id'
+      ]
+    }.freeze
   end
 end
